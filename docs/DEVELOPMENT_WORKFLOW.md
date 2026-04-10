@@ -46,7 +46,7 @@ Co-Authored-By: Paperclip <noreply@paperclip.ing>"
 git push origin main
 ```
 
-Note: `git push` requires `GH_TOKEN` in the environment. See Authentication section.
+Note: `git push` requires `GH_CONFIG_DIR="$HOME/.config/gh"` set first. See Authentication section.
 
 ### For Feature Work or Nontrivial Changes
 
@@ -80,7 +80,7 @@ Include the issue identifier in commit messages:
 
 - Add DEVELOPMENT_WORKFLOW.md
 - Document branch/commit/PR expectations
-- Confirm push access via GH_TOKEN
+- Confirm push access via GH_CONFIG_DIR override + gh auth status
 
 Co-Authored-By: Paperclip <noreply@paperclip.ing>
 ```
