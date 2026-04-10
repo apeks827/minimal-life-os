@@ -7,7 +7,7 @@ This repository enforces a GitHub-first delivery process. All engineering work m
 - **Remote:** `origin` → `https://github.com/apeks827/minimal-life-os.git`
 - **Default branch:** `main`
 - **Visibility:** Public
-- **Push access:** Requires `GH_TOKEN` exported in the active shell for push/PR operations
+- **Push/PR access:** Requires `GH_CONFIG_DIR="$HOME/.config/gh"` set in the active shell before `gh` or `git push`. Auth is stored in `~/.config/gh/hosts.yml`. The `GH_TOKEN` variable is not currently set — do not depend on it.
 
 ## Git Configuration
 
@@ -87,18 +87,23 @@ Co-Authored-By: Paperclip <noreply@paperclip.ing>
 
 ## Authentication
 
-The environment does **not** have a configured `git credential.helper`, so standard HTTPS push will fail with a username prompt. The primary auth mechanism is `GH_TOKEN` used with the `gh` CLI and `git` push.
+The `gh` CLI and `git push` authenticate via a stored token in `~/.config/gh/hosts.yml`. The Paperclip adapter overrides `XDG_CONFIG_HOME` to a temp directory at startup, which breaks `gh` credential lookup. A single environment override restores auth.
 
-### Primary Auth Path (GH_TOKEN)
+### Auth Override (Required in This Workspace)
 
-The `GH_TOKEN` environment variable must be set with a valid GitHub personal access token (`repo` scope). It is used for:
-
-- `gh` CLI operations (authenticated as `apeks827`)
-- `git push` operations (via credential helper)
-
-Usage:
+Before any `gh` or `git push` command, set:
 
 ```bash
+export GH_CONFIG_DIR="$HOME/.config/gh"
+```
+
+This points `gh` to the correct config file containing the `apeks827` token. Without this, `gh` and `git push` will report unauthenticated.
+
+Usage after the override:
+
+```bash
+export GH_CONFIG_DIR="$HOME/.config/gh"
+
 # Verify gh auth
 gh auth status -h github.com
 
@@ -109,21 +114,11 @@ git push -u origin <branch>
 gh pr create --title "..." --body "..."
 ```
 
-### Optional: Configure Credential Helper
-
-If `GH_TOKEN` is present but `git push` still prompts for credentials, configure the credential helper:
-
-```bash
-git config credential.helper '!f() { echo "username=apeks827"; echo "password=$GH_TOKEN"; }; f'
-```
-
-This is optional — the environment already uses `GH_TOKEN` for `gh` CLI and push.
-
 ### Token Safety Rules
 
 - **Never** hardcode the token in scripts, logs, or committed files
-- **Never** log or print `GH_TOKEN` or its value
-- Always pass via environment; do not interpolate into command strings
+- **Never** log or print the token value
+- Do not pass token via `GH_TOKEN` env var — use the `GH_CONFIG_DIR` override instead
 
 ## Failure Modes and Recovery
 
@@ -146,11 +141,13 @@ If `git push` is rejected because the remote is ahead:
 
 If push or `gh` CLI fails with authentication errors:
 
-1. Verify `GH_TOKEN` is set and valid:
-   ```bash
-   gh auth status -h github.com
-   ```
-2. If invalid or missing, do not proceed — **escalate to CTO** for token refresh. This is outside DevEx control.
+1. Ensure `gh` is pointed at the persisted auth file:
+```bash
+export GH_CONFIG_DIR="$HOME/.config/gh"
+gh auth status -h github.com
+```
+2. If the output still says "not logged into any GitHub hosts", confirm `~/.config/gh/hosts.yml` exists and is readable in this workspace.
+3. If auth is still invalid or missing after confirming `GH_CONFIG_DIR` and `hosts.yml`, do not proceed — **escalate to CTO** for token refresh/rotation. This is outside DevEx control.
 
 ### Commit to `main` Mistake
 
@@ -194,7 +191,7 @@ No CI/CD pipeline is defined yet. When adding one:
 
 - [x] Clone/fetch from the public repo
 - [x] Create branches locally
-- [x] Push branches and open PRs (via `GH_TOKEN` + `gh`)
+- [x] Push branches and open PRs (via `GH_CONFIG_DIR` + `gh`)
 - [x] Merge PRs via GitHub UI or `gh pr merge`
 
 ## What Needs Human Setup
@@ -225,9 +222,11 @@ No CI/CD pipeline is defined yet. When adding one:
 git remote -v
 git status -sb
 
-# Verify gh auth
+# Verify gh auth (requires GH_CONFIG_DIR in this workspace)
+export GH_CONFIG_DIR="$HOME/.config/gh"
 gh auth status -h github.com
 
 # View repo metadata
+export GH_CONFIG_DIR="$HOME/.config/gh"
 gh repo view apeks827/minimal-life-os --json defaultBranchRef,visibility
 ```
