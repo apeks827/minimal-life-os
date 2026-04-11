@@ -48,56 +48,53 @@ Returns `{"status": "ok"}`.
 ## Local Development
 
 ```bash
-# Install dependencies
 cd opti
-pip install -e .
 
 # Run the server
-uvicorn app.main:app --reload
+.venv/bin/uvicorn app.main:app --reload
 
 # Run tests
-OPT_DATA_DIR=/tmp/opti-test pytest tests/
+OPT_DATA_DIR=/tmp/opti-test .venv/bin/pytest tests/
 ```
 
 ## Validation Commands
 
 ```bash
-# 1. Install deps
-cd opti && pip install -e .
+cd opti
 
-# 2. Start server in background (port 8000)
-uvicorn app.main:app --port 8000 &
+# 1. Start server in background (port 8000)
+.venv/bin/uvicorn app.main:app --port 8000 &
 sleep 2
 
-# 3. GET new session — expect default empty shape
-curl -s http://localhost:8000/api/v1/task-state | python -m json.tool
+# 2. GET new session — expect default empty shape
+curl -s http://localhost:8000/api/v1/task-state | python3 -m json.tool
 
-# 4. PUT state and reload — expect persistence
+# 3. PUT state and reload — expect persistence
 curl -s -X PUT http://localhost:8000/api/v1/task-state \
   -H "Content-Type: application/json" \
   -d '{"inbox":[{"id":"a","title":"Inbox A","completed":false}],"today":[{"id":"b","title":"Today B","completed":false}],"later":[],"focus":{"id":"b","title":"Today B","completed":false},"completed":[],"session_count":1,"carry_forward_queue":[]}' \
-  | python -m json.tool
+  | python3 -m json.tool
 
-# 5. GET persisted state
-curl -s http://localhost:8000/api/v1/task-state | python -m json.tool
+# 4. GET persisted state
+curl -s http://localhost:8000/api/v1/task-state | python3 -m json.tool
 
-# 6. Test today > 3 — expect 422
+# 5. Test today > 3 — expect 422
 curl -s -X PUT http://localhost:8000/api/v1/task-state \
   -H "Content-Type: application/json" \
   -d '{"inbox":[],"today":[{"id":"1","title":"1","completed":false},{"id":"2","title":"2","completed":false},{"id":"3","title":"3","completed":false},{"id":"4","title":"4","completed":false}],"later":[],"focus":null,"completed":[],"session_count":0,"carry_forward_queue":[]}' \
   -w "\nHTTP_STATUS:%{http_code}\n"
 
-# 7. Test carryForwardQueue non-empty — expect 422
+# 6. Test carryForwardQueue non-empty — expect 422
 curl -s -X PUT http://localhost:8000/api/v1/task-state \
   -H "Content-Type: application/json" \
   -d '{"inbox":[],"today":[],"later":[],"focus":null,"completed":[],"session_count":0,"carry_forward_queue":[{"id":"x","title":"Bad","completed":false}]}' \
   -w "\nHTTP_STATUS:%{http_code}\n"
 
-# 8. Run unit tests
-OPT_DATA_DIR=/tmp/opti-test pytest tests/ -v
+# 7. Run unit tests
+OPT_DATA_DIR=/tmp/opti-test .venv/bin/pytest tests/ -v
 
-# 9. Health check
-curl -s http://localhost:8000/health | python -m json.tool
+# 8. Health check
+curl -s http://localhost:8000/health | python3 -m json.tool
 ```
 
 ## Material Documentation Impact

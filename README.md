@@ -6,34 +6,38 @@ Minimalist life-management product. Focus: simple daily capture, prioritization,
 
 ```
 minimal-life-os/
-├── opti/                      # Backend API (FastAPI + Python)
-│   ├── app/                  # FastAPI application
-│   ├── tests/                # Backend tests
-│   ├── pyproject.toml        # Python dependencies
-│   └── README.md             # Backend API documentation
-├── docs/
-│   └── DEVELOPMENT_WORKFLOW.md # GitHub-first delivery guidance
-└── src/                      # Frontend (Vue 3 + TypeScript + Vite)
+├── opti/ # Backend API (FastAPI + Python)
+│   ├── app/ # FastAPI application
+│   │   ├── static/ # Frontend static files
+│   │   │   └── index.html # Single-page MVP shell
+│   ├── tests/ # Backend tests
+│   ├── .venv/ # Prebuilt virtual environment
+│   ├── pyproject.toml # Python dependencies
+│   └── README.md # Backend API documentation
+└── docs/
+    └── DEVELOPMENT_WORKFLOW.md # GitHub-first delivery guidance
 ```
 
 This README is the canonical source-of-truth for the Minimal Life OS project. For delivery workflow and engineering conventions, see `docs/DEVELOPMENT_WORKFLOW.md`.
 
 ## Stack
 
-- **Frontend:** Vue 3 + TypeScript + Vite
-- **Testing:** Vitest (frontend), pytest (backend)
 - **Backend:** FastAPI + Uvicorn
-- **Persistence:** JSON file (`data/task_state.json`)
+- **Frontend:** Single-page HTML/JS (no build step)
+- **Testing:** pytest
+- **Persistence:** SQLite (`$OPT_DATA_DIR/task_state.db`)
+- **Python:** 3.11+ (prebuilt venv at `opti/.venv`)
 
 ## Run Locally
 
-### Backend
+### Backend + Frontend
 
 ```bash
 cd opti
-pip install -e .
-uvicorn app.main:app --reload
+.venv/bin/uvicorn app.main:app --reload
 ```
+
+Open http://localhost:8000 in browser.
 
 Health check:
 
@@ -41,40 +45,26 @@ Health check:
 curl http://localhost:8000/health
 ```
 
-### Frontend
-
-```bash
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-The Vite dev server runs on port `4173`.
-
 ## Validation Commands
 
 ```bash
-# Backend
-cd opti && pip install -e .
-pytest tests/ -v
+# Backend tests (use prebuilt venv)
+cd opti
+.venv/bin/pytest tests/ -v
 
-# Frontend
-npm run lint
-npm run type-check
-npm run test -- --run
-npm run build
+# Lint
+.venv/bin/ruff check app/ tests/
 
-# Full frontend gate
-npm run validate
+# Type check (if mypy available)
+.venv/bin/mypy app/
 ```
 
 ## Port Policy
 
-| Service      | Port | Source              |
-|-------------|------|---------------------|
-| Frontend dev | 4173 | `vite.config.ts`    |
-| Backend API  | 8000 | uvicorn default     |
-| AI proxy    | 4174 | `.env.example`      |
+| Service | Port | Source |
+|------------|------|-----------------|
+| Backend API | 8000 | uvicorn default |
+| Frontend | 8000 | served by backend |
 
 ## GitHub-First Delivery
 
