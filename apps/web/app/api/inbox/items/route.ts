@@ -1,12 +1,13 @@
 import { aiClassificationSchema } from "@life/shared";
 import { z } from "zod";
 import { clientKey, PayloadTooLargeError, payloadTooLargeResponse, rateLimit, rateLimitResponse, readJsonWithLimit } from "../../../../src/lib/http-guards";
-import { persistClassifiedInbox } from "../../../../src/lib/inbox-persistence";
+import { persistClassifiedInbox, type SupabaseLike } from "../../../../src/lib/inbox-persistence";
 import { createSupabaseServerClient } from "../../../../src/lib/supabase-client";
 
 const persistRequestSchema = z.object({
   text: z.string().min(1),
   classification: aiClassificationSchema,
+  idempotencyKey: z.string().min(8).max(120).optional(),
 });
 
 export async function POST(request: Request) {
@@ -30,6 +31,6 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const result = await persistClassifiedInbox(supabase, { userId: data.user.id, ...parsed.data });
+  const result = await persistClassifiedInbox(supabase as unknown as SupabaseLike, { userId: data.user.id, ...parsed.data });
   return Response.json({ mode: "supabase", persisted: true, ...result });
 }

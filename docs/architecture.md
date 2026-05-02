@@ -40,3 +40,6 @@ UI translations now live in `apps/web/src/lib/i18n.ts` as a typed dictionary plu
 
 ## Production Readiness Baseline
 The web app now applies security headers globally, uses lightweight API payload/rate guards, and exposes richer readiness data in `/api/health`. These are preview/MVP controls; production should move rate limiting and observability to shared infrastructure.
+
+## Inbox idempotency
+Inbox capture now supports client-generated idempotency keys and retry processing reuses the original inbox row. This preserves the capture-first model and avoids duplicate derived tasks/events/habits during refreshes or provider retries.

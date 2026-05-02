@@ -59,3 +59,6 @@ Both endpoints validate the shared schemas, return `202` local-mode metadata wit
 
 ## API Guards
 `/api/inbox/classify` and `/api/inbox/items` enforce JSON payload limits and per-route rate limits. `/api/inbox/retry` is rate-limited and validates `CRON_SECRET` with timing-safe comparison when configured.
+
+## Idempotent inbox persistence
+`POST /api/inbox/items` accepts optional `idempotencyKey` (8-120 chars). Supabase mode stores it on `inbox_items` with a per-user unique index so double-clicks, refreshes, and retried submissions do not create duplicate inbox rows or derived entities.

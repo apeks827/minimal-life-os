@@ -30,7 +30,7 @@ export async function retryInboxBatch(supabase: RetryPersistClient, limit = 10):
   for (const item of (data ?? []) as PendingInboxItem[]) {
     try {
       const classification = await classifyInboxText({ text: item.raw_text, provider: callConfiguredAiProvider });
-      await persistClassifiedInbox(supabase, { userId: item.user_id, text: item.raw_text, classification });
+      await persistClassifiedInbox(supabase, { userId: item.user_id, text: item.raw_text, classification, existingInboxId: item.id });
       await supabase.from("inbox_items").update({ status: classification.status, classification, attempts: (item.attempts ?? 0) + 1, last_error: null, next_retry_at: null }).eq("id", item.id);
       processed += 1;
       logInfo("inbox_retry_processed", { inboxId: item.id });

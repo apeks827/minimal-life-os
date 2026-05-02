@@ -12,3 +12,6 @@ We keep deterministic heuristic classification and local persistence as the defa
 
 ## Decision: preview security baseline before shared infrastructure
 We added app-level security headers and process-local API guards now because they close immediate MVP abuse gaps without new services. Production will replace process-local counters with edge or shared-store rate limiting and centralized observability.
+
+## Decision: idempotency at inbox boundary
+Idempotency is stored on `inbox_items` rather than every derived entity because the inbox row is the source of truth. Derived entities are only created after the inbox row is accepted, and retry processing updates the existing row.

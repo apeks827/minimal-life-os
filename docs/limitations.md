@@ -16,3 +16,6 @@ Migration `0003` now enables `vector`; Supabase projects without pgvector suppor
 
 ## Production blockers
 Current rate limiting is process-local and should be replaced with edge/Redis limits before public launch. Export/delete flows, full RLS isolation tests, Sentry/OpenTelemetry wiring, legal/privacy launch copy, and account deletion remain production blockers.
+
+## Data integrity limitations
+Idempotency now protects inbox submissions and retry reprocessing, but full transactional guarantees still depend on Supabase/Postgres behavior. Dedicated background workers, queue leases, and RLS isolation tests remain production work.

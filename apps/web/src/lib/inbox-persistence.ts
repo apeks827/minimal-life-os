@@ -1,9 +1,10 @@
 import type { AiClassification, AiEntity } from "@life/shared";
 import { mapInboxItemTypeToEntityType, normalizeLifeArea } from "@life/shared";
 
-type SupabaseLike = {
+export type SupabaseLike = {
   from(table: string): {
     insert(values: unknown): { select(columns?: string): { single(): PromiseLike<{ data: unknown; error: { message: string } | null }> } };
+    select?(columns?: string): { eq(column: string, value: string): { eq(column: string, value: string): { maybeSingle(): PromiseLike<{ data: unknown; error: { message: string } | null }> } } };
   };
 };
 
@@ -11,9 +12,15 @@ export type PersistInboxInput = {
   userId: string;
   text: string;
   classification: AiClassification;
+  idempotencyKey?: string | undefined;
+  existingInboxId?: string | undefined;
 };
 
-export async function persistClassifiedInbox(supabase: SupabaseLike, input: PersistInboxInput): Promise<{ inboxId: string; created: number }> {
+export async function persistClassifiedInbox(supabase: SupabaseLike, input: PersistInboxInput): Promise<{ inboxId: string; created: number; reused: boolean }> {
+  const existing = input.existingInboxId ? { id: input.existingInboxId } : await findExistingInbox(supabase, input.userId, input.idempotencyKey);
+  const inboxId = existing?.id;
+  if (inboxId) return { inboxId, created: 0, reused: true };
+
   const inboxInsert = await supabase
     .from("inbox_items")
     .insert({
@@ -22,20 +29,21 @@ export async function persistClassifiedInbox(supabase: SupabaseLike, input: Pers
       status: input.classification.status,
       classification: input.classification,
       retryable: input.classification.retryable,
+      idempotency_key: input.idempotencyKey ?? null,
     })
     .select("id")
     .single();
 
   if (inboxInsert.error) throw new Error(inboxInsert.error.message);
-  const inboxId = readId(inboxInsert.data);
+  const insertedInboxId = readId(inboxInsert.data);
   let created = 0;
 
   for (const item of input.classification.items) {
-    await persistEntity(supabase, input.userId, inboxId, item);
+    await persistEntity(supabase, input.userId, insertedInboxId, item);
     created += 1;
   }
 
-  return { inboxId, created };
+  return { inboxId: insertedInboxId, created, reused: false };
 }
 
 async function persistEntity(supabase: SupabaseLike, userId: string, inboxId: string, item: AiEntity) {
@@ -85,4 +93,14 @@ function valuesForEntity(userId: string, inboxId: string, item: AiEntity): Recor
 function readId(data: unknown): string {
   if (data && typeof data === "object" && "id" in data && typeof data.id === "string") return data.id;
   throw new Error("Supabase insert did not return an id");
+}
+
+async function findExistingInbox(supabase: SupabaseLike, userId: string, idempotencyKey: string | undefined): Promise<{ id: string } | null> {
+  if (!idempotencyKey) return null;
+  const table = supabase.from("inbox_items");
+  if (!table.select) return null;
+  const result = await table.select("id").eq("user_id", userId).eq("idempotency_key", idempotencyKey).maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  if (result.data && typeof result.data === "object" && "id" in result.data && typeof result.data.id === "string") return { id: result.data.id };
+  return null;
 }
