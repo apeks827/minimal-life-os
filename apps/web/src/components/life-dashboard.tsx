@@ -2,7 +2,7 @@
 
 import { copy, type Locale } from "@life/shared";
 import { useEffect, useMemo, useState } from "react";
-import { createLocalInboxRepository } from "../lib/repository";
+import { createConfiguredInboxRepository } from "../lib/repository";
 import { createBrowserLifeStorage } from "../lib/storage";
 import {
   initialLifeState,
@@ -73,7 +73,7 @@ export function LifeDashboard() {
     setError(null);
     try {
       const storage = createBrowserLifeStorage(window.localStorage);
-      const repository = createLocalInboxRepository(storage);
+      const repository = createConfiguredInboxRepository(storage);
       const classification = await repository.classify({ text: trimmed, locale });
       setState(await repository.saveClassification(state, trimmed, classification));
       setText("");

@@ -20,3 +20,8 @@ The web app is local-first while Supabase credentials are optional. `LifeDashboa
 ## Repository Path To Supabase
 
 The web app now talks to an `InboxRepository` contract. Local MVP mode uses `createLocalInboxRepository` with browser storage. Production wiring can swap to `createSupabaseReadyInboxRepository`, which keeps the classify API contract and sends `{ text, classification }` to a future authenticated `/api/inbox/items` endpoint for transactional creation of `inbox_items` plus derived entities.
+
+
+## Auth And Persistence Wiring
+
+`apps/web/src/lib/supabase-client.ts` creates browser/server clients only when Supabase env is present. Auth server actions sign users in/up through Supabase and otherwise explain that local MVP mode is active. The dashboard repository chooses Supabase persistence when env exists, falling back to local storage when it does not.

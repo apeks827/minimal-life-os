@@ -28,7 +28,7 @@ Provider failures return a classified fallback plus retry metadata instead of bl
 The browser stores a serialized `LifeState` under `lifeinbox.mvp.state`. It contains raw inbox records, derived life records, and settings. This is intentionally replaceable by Supabase repository methods.
 
 
-## Planned `POST /api/inbox/items`
+## `POST /api/inbox/items`
 
 Persists a classified inbox item for the authenticated user. The local repository already uses the same request shape:
 
@@ -36,4 +36,4 @@ Persists a classified inbox item for the authenticated user. The local repositor
 { "text": "купить молоко", "classification": { "status": "classified", "items": [] } }
 ```
 
-The endpoint should insert into `inbox_items`, then fan out records into tasks, goals, habits, notes, events, or memories inside one transaction.
+When Supabase env and an authenticated user are present, the endpoint inserts into `inbox_items`, then fans out records into tasks, goals, habits, notes, events, or memories. Without Supabase env it returns `202` local-mode metadata so the browser can continue local persistence.

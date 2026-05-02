@@ -9,3 +9,5 @@
 
 - Added Supabase-ready inbox repository contracts plus interactive local onboarding/settings persistence.
 - Added Dependabot automerge workflow for passing dependency PRs.
+
+- Wired Supabase auth actions and `/api/inbox/items` persistence endpoint with local-mode fallback.
