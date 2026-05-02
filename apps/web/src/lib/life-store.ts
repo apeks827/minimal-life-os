@@ -5,6 +5,7 @@ export type LifeRecord = AiEntity & {
   id: string;
   inboxId: string;
   createdAt: string;
+  completedAt?: string | null;
 };
 
 export type InboxRecord = {
@@ -12,6 +13,7 @@ export type InboxRecord = {
   text: string;
   classification: AiClassification;
   createdAt: string;
+  completedAt?: string | null;
 };
 
 export type LifeState = {
@@ -70,7 +72,19 @@ export function appendClassification(state: LifeState, text: string, classificat
 }
 
 export function updateLocale(state: LifeState, locale: Locale): LifeState {
-  return updateSettings(state, { locale });
+  return updateSettings(state, { locale, language: locale });
+}
+
+export function toggleRecordCompleted(state: LifeState, recordId: string): LifeState {
+  const now = new Date().toISOString();
+  return {
+    ...state,
+    records: state.records.map((record) => (record.id === recordId ? { ...record, completedAt: record.completedAt ? null : now } : record)),
+  };
+}
+
+export function deleteRecord(state: LifeState, recordId: string): LifeState {
+  return { ...state, records: state.records.filter((record) => record.id !== recordId) };
 }
 
 export function updateSettings(state: LifeState, settings: Partial<UserSettings>): LifeState {
@@ -88,7 +102,7 @@ export function updateOnboarding(state: LifeState, onboarding: OnboardingAnswer)
 export function todayPlan(records: LifeRecord[]): LifeRecord[] {
   const weight = { high: 3, medium: 2, low: 1 } as const;
   return records
-    .filter((record) => ["task", "event", "habit"].includes(record.type))
+    .filter((record) => ["task", "event", "habit"].includes(record.type) && !record.completedAt)
     .slice()
     .sort((a, b) => weight[b.priority] - weight[a.priority])
     .slice(0, 6);

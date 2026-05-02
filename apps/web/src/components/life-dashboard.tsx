@@ -8,8 +8,10 @@ import { logError, logInfo } from "../lib/logger";
 import { createBrowserLifeStorage } from "../lib/storage";
 import {
   initialLifeState,
+  deleteRecord,
   recordsByType,
   todayPlan,
+  toggleRecordCompleted,
   updateLocale,
   type LifeRecord,
   type LifeState,
@@ -24,6 +26,7 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
 
   const locale = state.settings.locale;
   const l = dictionaries[locale];
+  const storage = typeof window !== "undefined" ? createBrowserLifeStorage(window.localStorage) : null;
 
   useEffect(() => {
     if (serverState) {
@@ -39,6 +42,14 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
     { title: locale === "ru" ? "5 минут английского" : "5 minutes of English", action: locale === "ru" ? "Создать привычку" : "Create a habit", type: "habit" as const, lifeArea: "learning" as const },
     { title: locale === "ru" ? "Разобрать деньги" : "Review money", action: locale === "ru" ? "Добавить финансовый шаг" : "Add a finance step", type: "task" as const, lifeArea: "finance" as const },
   ];
+
+  function updateAndPersist(updater: (current: LifeState) => LifeState) {
+    setState((current) => {
+      const next = updater(current);
+      storage?.save(next);
+      return next;
+    });
+  }
 
   async function submitInbox() {
     const trimmed = text.trim();
@@ -110,14 +121,14 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
           </div>
         </div>
 
-        <Panel title={l.today} records={plan} locale={locale} empty={l.empty} accent="bg-[var(--clay)]" />
+        <Panel title={l.today} records={plan} locale={locale} empty={l.empty} accent="bg-[var(--clay)]" onToggleComplete={(id) => updateAndPersist((current) => toggleRecordCompleted(current, id))} onDelete={(id) => updateAndPersist((current) => deleteRecord(current, id))} />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Panel title={inboxTypeLabels.task[locale]} records={recordsByType(state.records, "task")} locale={locale} empty={l.empty} />
-        <Panel title={inboxTypeLabels.goal[locale]} records={recordsByType(state.records, "goal")} locale={locale} empty={l.empty} />
-        <Panel title={inboxTypeLabels.habit[locale]} records={recordsByType(state.records, "habit")} locale={locale} empty={l.empty} />
-        <Panel title={inboxTypeLabels.event[locale]} records={recordsByType(state.records, "event")} locale={locale} empty={l.empty} />
+      <section aria-label="Life sections" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Panel title={inboxTypeLabels.task[locale]} records={recordsByType(state.records, "task")} locale={locale} empty={l.empty} onToggleComplete={(id) => updateAndPersist((current) => toggleRecordCompleted(current, id))} onDelete={(id) => updateAndPersist((current) => deleteRecord(current, id))} />
+        <Panel title={inboxTypeLabels.goal[locale]} records={recordsByType(state.records, "goal")} locale={locale} empty={l.empty} onDelete={(id) => updateAndPersist((current) => deleteRecord(current, id))} />
+        <Panel title={inboxTypeLabels.habit[locale]} records={recordsByType(state.records, "habit")} locale={locale} empty={l.empty} onToggleComplete={(id) => updateAndPersist((current) => toggleRecordCompleted(current, id))} onDelete={(id) => updateAndPersist((current) => deleteRecord(current, id))} />
+        <Panel title={inboxTypeLabels.event[locale]} records={recordsByType(state.records, "event")} locale={locale} empty={l.empty} onToggleComplete={(id) => updateAndPersist((current) => toggleRecordCompleted(current, id))} onDelete={(id) => updateAndPersist((current) => deleteRecord(current, id))} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
@@ -133,7 +144,7 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
   );
 }
 
-function Panel({ title, records, locale, empty, accent = "bg-[var(--moss)]" }: { title: string; records: LifeRecord[]; locale: Locale; empty: string; accent?: string }) {
+function Panel({ title, records, locale, empty, accent = "bg-[var(--moss)]", onToggleComplete, onDelete }: { title: string; records: LifeRecord[]; locale: Locale; empty: string; accent?: string; onToggleComplete?: (id: string) => void; onDelete?: (id: string) => void }) {
   return (
     <article className="rise rounded-[32px] border border-black/10 bg-white/55 p-6 backdrop-blur">
       <div className="flex items-center justify-between gap-4">
@@ -141,18 +152,22 @@ function Panel({ title, records, locale, empty, accent = "bg-[var(--moss)]" }: {
         <span className={`${accent} rounded-full px-3 py-1 text-sm text-white`}>{records.length}</span>
       </div>
       <div className="mt-4 grid gap-3">
-        {records.length === 0 ? <p className="text-black/55">{empty}</p> : records.map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}
+        {records.length === 0 ? <p className="text-black/55">{empty}</p> : records.map((record) => <RecordCard key={record.id} record={record} locale={locale} onToggleComplete={onToggleComplete} onDelete={onDelete} />)}
       </div>
     </article>
   );
 }
 
-function RecordCard({ record, locale }: { record: LifeRecord; locale: Locale }) {
+function RecordCard({ record, locale, onToggleComplete, onDelete }: { record: LifeRecord; locale: Locale; onToggleComplete?: (id: string) => void; onDelete?: (id: string) => void }) {
   return (
     <div className="rounded-3xl bg-[#fffaf0]/80 p-4">
       <p className="text-xs uppercase tracking-[0.22em] text-black/45">{inboxTypeLabels[record.type]?.[locale] ?? record.type} / {Math.round(record.confidence * 100)}%</p>
-      <h3 className="mt-2 font-display text-xl">{record.title}</h3>
+      <h3 className={`mt-2 font-display text-xl ${record.completedAt ? "line-through opacity-55" : ""}`}>{record.title}</h3>
       {record.needsClarification ? <p className="mt-2 text-sm text-[var(--clay)]">{record.clarificationQuestion}</p> : null}
+      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        {onToggleComplete ? <button className="rounded-full bg-white/70 px-3 py-2" onClick={() => onToggleComplete(record.id)}>{record.completedAt ? (locale === "ru" ? "Вернуть" : "Reopen") : (locale === "ru" ? "Готово" : "Done")}</button> : null}
+        {onDelete ? <button className="rounded-full bg-white/70 px-3 py-2" onClick={() => onDelete(record.id)}>{locale === "ru" ? "Удалить" : "Delete"}</button> : null}
+      </div>
     </div>
   );
 }
