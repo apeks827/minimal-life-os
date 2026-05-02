@@ -26,3 +26,7 @@ Apply both migrations in order. `0002_profiles_rls_and_entity_links.sql` install
 
 
 CI installs Playwright Chromium before `pnpm test:e2e`; keep this step when upgrading Playwright because browsers are not included in the npm package cache.
+
+## Runtime Versions
+
+CI uses Node.js 24 and `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` to avoid GitHub Actions Node 20 deprecation warnings. E2E runs against the production Next server after `pnpm build`.

@@ -1,8 +1,10 @@
 "use client";
 
-import { copy, type Locale } from "@life/shared";
+import { lifeAreaLabels, type Locale } from "@life/shared";
 import { useEffect, useMemo, useState } from "react";
 import { createConfiguredInboxRepository } from "../lib/repository";
+import { dictionaries, inboxTypeLabels, screenLinks } from "../lib/i18n";
+import { logError, logInfo } from "../lib/logger";
 import { createBrowserLifeStorage } from "../lib/storage";
 import {
   initialLifeState,
@@ -13,43 +15,6 @@ import {
   type LifeState,
 } from "../lib/life-store";
 
-const labels = {
-  ru: {
-    hero: "Соберите жизнь в один спокойный вход.",
-    subtitle: "Пишите как есть. MVP сохранит запись локально, разберет ее и покажет в нужных разделах.",
-    submit: "Разобрать и добавить в план",
-    processing: "Разбираю...",
-    today: "План на сегодня",
-    inbox: "Журнал входящих",
-    empty: "Пока пусто. Добавьте первую мысль, задачу или привычку.",
-    auth: "Войти",
-    onboarding: "Онбординг",
-    settings: "Настройки",
-    fallback: "Локальная классификация активна. Можно подключить AI позже.",
-  },
-  en: {
-    hero: "Collect life into one calm inbox.",
-    subtitle: "Write naturally. The MVP saves locally, classifies, and reflects it across sections.",
-    submit: "Classify and add to plan",
-    processing: "Classifying...",
-    today: "Today Plan",
-    inbox: "Inbox log",
-    empty: "Nothing yet. Add a first thought, task, or habit.",
-    auth: "Sign in",
-    onboarding: "Onboarding",
-    settings: "Settings",
-    fallback: "Local classification is active. Connect AI later.",
-  },
-} as const;
-
-const typeLabels = {
-  task: { ru: "Задачи", en: "Tasks" },
-  goal: { ru: "Цели", en: "Goals" },
-  habit: { ru: "Привычки", en: "Habits" },
-  event: { ru: "Календарь", en: "Calendar" },
-  note: { ru: "Заметки", en: "Notes" },
-  memory: { ru: "Память", en: "Memory" },
-} as const;
 
 export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
   const [state, setState] = useState<LifeState>(serverState ?? initialLifeState);
@@ -58,7 +23,7 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const locale = state.settings.locale;
-  const l = labels[locale];
+  const l = dictionaries[locale];
 
   useEffect(() => {
     if (serverState) {
@@ -68,7 +33,12 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
     setState(createBrowserLifeStorage(window.localStorage).load());
   }, [serverState]);
 
-  const plan = useMemo(() => todayPlan(state.records), [state.records]);
+  const plan = useMemo(() => todayPlan(state.records).slice(0, state.settings.dailyTaskCount), [state.records, state.settings.dailyTaskCount]);
+  const suggestionCloud = state.inbox[0]?.classification.suggestions ?? [
+    { title: locale === "ru" ? "Позвонить маме" : "Call mom", action: locale === "ru" ? "Добавить заботливую задачу" : "Add a caring task", type: "task" as const, lifeArea: "family" as const },
+    { title: locale === "ru" ? "5 минут английского" : "5 minutes of English", action: locale === "ru" ? "Создать привычку" : "Create a habit", type: "habit" as const, lifeArea: "learning" as const },
+    { title: locale === "ru" ? "Разобрать деньги" : "Review money", action: locale === "ru" ? "Добавить финансовый шаг" : "Add a finance step", type: "task" as const, lifeArea: "finance" as const },
+  ];
 
   async function submitInbox() {
     const trimmed = text.trim();
@@ -79,9 +49,12 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
       const storage = createBrowserLifeStorage(window.localStorage);
       const repository = createConfiguredInboxRepository(storage);
       const classification = await repository.classify({ text: trimmed, locale });
-      setState(await repository.saveClassification(state, trimmed, classification));
+      const next = await repository.saveClassification(state, trimmed, classification);
+      logInfo("inbox_classified", { status: classification.status, items: classification.items.length });
+      setState(next);
       setText("");
     } catch (cause) {
+      logError("inbox_classification_failed", cause);
       setError(cause instanceof Error ? cause.message : "Classification failed");
     } finally {
       setIsLoading(false);
@@ -96,6 +69,8 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
           <a className="rounded-full bg-white/60 px-3 py-2" href="/auth">{l.auth}</a>
           <a className="rounded-full bg-white/60 px-3 py-2" href="/onboarding">{l.onboarding}</a>
           <a className="rounded-full bg-white/60 px-3 py-2" href="/settings">{l.settings}</a>
+          <a className="rounded-full bg-white/60 px-3 py-2" href="/settings#advanced">{l.advanced}</a>
+          {screenLinks.map((link) => <a key={link.href} className="rounded-full bg-white/40 px-3 py-2" href={link.href}>{link.label[locale]}</a>)}
           <button className="rounded-full bg-[var(--ink)] px-3 py-2 text-white" onClick={() => setState((current) => {
               const next = updateLocale(current, locale === "ru" ? "en" : "ru");
               createBrowserLifeStorage(window.localStorage).save(next);
@@ -116,12 +91,22 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
               value={text}
               onChange={(event) => setText(event.target.value)}
               className="min-h-36 rounded-[28px] border border-black/10 bg-[#fffaf0] p-5 outline-none"
-              placeholder={copy[locale].inboxPlaceholder}
+              placeholder={l.inboxPlaceholder}
             />
             <button disabled={isLoading} onClick={submitInbox} className="rounded-full bg-[var(--ink)] px-6 py-4 text-left text-white disabled:opacity-60">
               {isLoading ? l.processing : l.submit}
             </button>
-            {error ? <p className="text-sm text-red-900">{error}</p> : <p className="text-sm text-black/55">{l.fallback}</p>}
+            {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-900">{error}. {l.retryLocal}</p> : <p className="text-sm text-black/55">{l.fallback}</p>}
+            <div className="grid gap-2 rounded-[28px] bg-white/50 p-4">
+              <p className="text-xs uppercase tracking-[0.22em] text-black/45">{l.suggestions}</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestionCloud.map((suggestion) => (
+                  <button key={`${suggestion.title}-${suggestion.action}`} className="rounded-full bg-[#fffaf0] px-4 py-2 text-sm text-black/75" onClick={() => setText(`${suggestion.title} — ${suggestion.action}`)}>
+                    {suggestion.title}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -129,10 +114,10 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Panel title={typeLabels.task[locale]} records={recordsByType(state.records, "task")} locale={locale} empty={l.empty} />
-        <Panel title={typeLabels.goal[locale]} records={recordsByType(state.records, "goal")} locale={locale} empty={l.empty} />
-        <Panel title={typeLabels.habit[locale]} records={recordsByType(state.records, "habit")} locale={locale} empty={l.empty} />
-        <Panel title={typeLabels.event[locale]} records={recordsByType(state.records, "event")} locale={locale} empty={l.empty} />
+        <Panel title={inboxTypeLabels.task[locale]} records={recordsByType(state.records, "task")} locale={locale} empty={l.empty} />
+        <Panel title={inboxTypeLabels.goal[locale]} records={recordsByType(state.records, "goal")} locale={locale} empty={l.empty} />
+        <Panel title={inboxTypeLabels.habit[locale]} records={recordsByType(state.records, "habit")} locale={locale} empty={l.empty} />
+        <Panel title={inboxTypeLabels.event[locale]} records={recordsByType(state.records, "event")} locale={locale} empty={l.empty} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
@@ -140,7 +125,7 @@ export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
         <article className="rounded-[32px] border border-black/10 bg-white/55 p-6 backdrop-blur">
           <h2 className="font-display text-3xl">{l.inbox}</h2>
           <div className="mt-4 grid gap-3">
-            {state.inbox.length === 0 ? <p className="text-black/55">{l.empty}</p> : state.inbox.map((item) => <InboxItem key={item.id} item={item.text} type={item.classification.items[0]?.type ?? "note"} />)}
+            {state.inbox.length === 0 ? <p className="text-black/55">{l.empty}</p> : state.inbox.map((item) => <InboxItem key={item.id} item={item.text} type={item.classification.items[0]?.type ?? "note"} message={item.classification.user_message} />)}
           </div>
         </article>
       </section>
@@ -165,31 +150,32 @@ function Panel({ title, records, locale, empty, accent = "bg-[var(--moss)]" }: {
 function RecordCard({ record, locale }: { record: LifeRecord; locale: Locale }) {
   return (
     <div className="rounded-3xl bg-[#fffaf0]/80 p-4">
-      <p className="text-xs uppercase tracking-[0.22em] text-black/45">{typeLabels[record.type][locale]} / {Math.round(record.confidence * 100)}%</p>
+      <p className="text-xs uppercase tracking-[0.22em] text-black/45">{inboxTypeLabels[record.type]?.[locale] ?? record.type} / {Math.round(record.confidence * 100)}%</p>
       <h3 className="mt-2 font-display text-xl">{record.title}</h3>
       {record.needsClarification ? <p className="mt-2 text-sm text-[var(--clay)]">{record.clarificationQuestion}</p> : null}
     </div>
   );
 }
 
-function InboxItem({ item, type }: { item: string; type: LifeRecord["type"] }) {
+function InboxItem({ item, type, message }: { item: string; type: string; message: string | undefined }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-3xl bg-white/60 p-4">
       <span className="text-sm text-black/75">{item}</span>
       <span className="rounded-full bg-black/10 px-3 py-1 text-xs">{type}</span>
+      {message ? <span className="text-xs text-black/45">{message}</span> : null}
     </div>
   );
 }
 
 function BalanceWheel({ locale, records }: { locale: Locale; records: LifeRecord[] }) {
-  const areas = ["health", "career", "relationships", "growth"];
+  const areas = ["health", "family", "relationships", "friends", "career", "finance", "learning", "home", "rest", "hobbies", "meaning", "emotions"] as const;
   return (
     <article className="rounded-[32px] border border-black/10 bg-white/55 p-6 backdrop-blur">
-      <h2 className="font-display text-3xl">{locale === "ru" ? "Колесо баланса" : "Balance Wheel"}</h2>
+      <h2 className="font-display text-3xl">{dictionaries[locale].balanceWheel}</h2>
       <div className="mt-5 grid grid-cols-2 gap-3">
         {areas.map((area, index) => (
           <div key={area} className="rounded-[28px] bg-[#fffaf0]/70 p-4">
-            <p className="text-sm capitalize text-black/55">{area}</p>
+            <p className="text-sm text-black/55">{lifeAreaLabels[area][locale]}</p>
             <div className="mt-3 h-2 rounded-full bg-black/10"><div className="h-2 rounded-full bg-[var(--moss)]" style={{ width: `${Math.min(100, 25 + records.length * 8 + index * 7)}%` }} /></div>
           </div>
         ))}

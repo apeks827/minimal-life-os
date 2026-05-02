@@ -5,6 +5,10 @@ import type { LifeStorage } from "./storage";
 
 export type ClassifyRequest = { text: string; locale: Locale };
 
+export function createInboxIdempotencyKey(text: string, timestamp = Date.now()): string {
+  return `${timestamp}:${text.trim().slice(0, 64)}`;
+}
+
 export type InboxRepository = {
   classify(input: ClassifyRequest): Promise<AiClassification>;
   saveClassification(state: LifeState, text: string, classification: AiClassification): Promise<LifeState>;
@@ -44,7 +48,7 @@ export function createSupabaseReadyInboxRepository(config: SupabaseInboxReposito
       const response = await fetch(saveEndpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text, classification }),
+        body: JSON.stringify({ text, classification, idempotencyKey: createInboxIdempotencyKey(text) }),
       });
       if (!response.ok) throw new Error(`Inbox persistence failed: ${response.status}`);
       return appendClassification(state, text, classification);

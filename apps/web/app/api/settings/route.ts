@@ -21,6 +21,16 @@ export async function PUT(request: Request) {
     ai_tone: settings.aiTone,
     daily_plan_hour: settings.dailyPlanHour,
     week_starts_on: settings.weekStartsOn,
+    advanced: {
+      dailyTaskCount: settings.dailyTaskCount,
+      suggestionAggressiveness: settings.suggestionAggressiveness,
+      autoIntegrationMode: settings.autoIntegrationMode,
+      focusAreas: settings.focusAreas,
+      protectedAreas: settings.protectedAreas,
+      notifications: settings.notifications,
+      privacy: settings.privacy,
+      testMode: settings.testMode,
+    },
   });
   if (settingsUpdate.error) return Response.json({ error: settingsUpdate.error.message }, { status: 500 });
 

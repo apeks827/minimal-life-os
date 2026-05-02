@@ -88,12 +88,12 @@ function memoryToRecord(item: DbMemory, createdAtByInbox: Map<string, string>): 
   return baseRecord(item.id, item.inbox_item_id, createdAtByInbox, { type: item.tags?.includes("note") ? "note" : "memory", title: item.content.slice(0, 120), summary: item.content, priority: "low" });
 }
 
-function baseRecord(id: string, inboxId: string | null, createdAtByInbox: Map<string, string>, item: Omit<AiEntity, "confidence" | "needsClarification"> & Partial<Pick<AiEntity, "confidence" | "needsClarification">>): LifeRecord {
-  return { ...item, id, inboxId: inboxId ?? id, createdAt: createdAtByInbox.get(inboxId ?? "") ?? new Date(0).toISOString(), confidence: item.confidence ?? 1, needsClarification: item.needsClarification ?? false };
+function baseRecord(id: string, inboxId: string | null, createdAtByInbox: Map<string, string>, item: Partial<AiEntity> & Pick<AiEntity, "type" | "title">): LifeRecord {
+  return { ...item, id, inboxId: inboxId ?? id, createdAt: createdAtByInbox.get(inboxId ?? "") ?? new Date(0).toISOString(), priority: item.priority ?? "medium", confidence: item.confidence ?? 1, effort: item.effort ?? "small", needsClarification: item.needsClarification ?? false };
 }
 
 function emptyClassification(text: string): AiClassification {
-  return { status: "classified", source: "heuristic", locale: "ru", language: "ru", retryable: false, items: [{ type: "note", title: text.slice(0, 120), priority: "low", confidence: 1, needsClarification: false }] };
+  return { status: "classified", source: "heuristic", locale: "ru", language: "ru", retryable: false, suggestions: [], items: [{ type: "note", title: text.slice(0, 120), priority: "low", effort: "small", confidence: 1, needsClarification: false }] };
 }
 
 function mergeOnboarding(answer: OnboardingAnswer | undefined, scores: DbBalanceScore[]): OnboardingAnswer | null {
@@ -104,5 +104,8 @@ function mergeOnboarding(answer: OnboardingAnswer | undefined, scores: DbBalance
     painPoints: answer?.painPoints ?? [],
     preferredTone: answer?.preferredTone ?? "gentle",
     balanceScores,
+    choices: answer?.choices ?? [],
+    energyLevel: answer?.energyLevel ?? "medium",
+    openAnswer: answer?.openAnswer,
   };
 }

@@ -19,6 +19,7 @@ export const settings = pgTable("settings", {
   aiTone: text("ai_tone").notNull().default("gentle"),
   dailyPlanHour: integer("daily_plan_hour").notNull().default(8),
   weekStartsOn: text("week_starts_on").notNull().default("monday"),
+  advanced: jsonb("advanced").notNull().default({}),
 });
 
 export const onboardingAnswers = pgTable("onboarding_answers", {
@@ -35,6 +36,9 @@ export const inboxItems = pgTable("inbox_items", {
   status: inboxStatusEnum("status").notNull().default("pending"),
   classification: jsonb("classification"),
   retryable: boolean("retryable").notNull().default(false),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  nextRetryAt: timestamp("next_retry_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -133,5 +137,26 @@ export const auditLogs = pgTable("audit_logs", {
   userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
   action: text("action").notNull(),
   metadata: jsonb("metadata").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+
+export const aiSuggestions = pgTable("ai_suggestions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  action: text("action").notNull(),
+  lifeArea: text("life_area"),
+  source: text("source").notNull().default("system"),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const aiMemories = pgTable("ai_memories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  tags: jsonb("tags").notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

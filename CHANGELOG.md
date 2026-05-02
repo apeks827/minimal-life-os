@@ -15,3 +15,15 @@
 - Added Supabase RLS/profile migration, entity inbox links, and authenticated server dashboard loading.
 
 - Added Supabase-backed settings/onboarding saves and installed Playwright browsers in CI before e2e tests.
+
+- Upgraded stable dependencies, moved CI to Node 24, fixed Next 16 e2e flow, and expanded the Expo mobile LifeInbox skeleton with local classification parity.
+
+- Expanded LifeInbox AI contract, onboarding quiz, Advanced Settings, suggestion cloud, health status, retry/memory migrations, seed flow, and E2E coverage.
+
+- Added Supabase auth/onboarding gate, optional OpenAI-compatible AI provider, core web screen routes, actionable suggestions, and Expo tab routes.
+
+- Moved web UI translations to a typed i18n module and made classification locale resolution honor selected/profile language.
+
+- Added preview security headers, API payload/rate guards, timing-safe retry secret checks, richer health readiness, and production runbook/security/privacy docs.
+
+- Added inbox idempotency keys, retry duplicate protection, production query indexes, and persistence tests for duplicate-safe capture.
