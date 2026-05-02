@@ -37,3 +37,6 @@ The web API exposes a cron-safe retry endpoint that re-runs pending or failed in
 
 ## Web i18n
 UI translations now live in `apps/web/src/lib/i18n.ts` as a typed dictionary plus helpers for navigation, inbox type labels, onboarding questions, and area labels. Domain-only labels stay in `@life/shared`; component-local copy constants should not be added.
+
+## Production Readiness Baseline
+The web app now applies security headers globally, uses lightweight API payload/rate guards, and exposes richer readiness data in `/api/health`. These are preview/MVP controls; production should move rate limiting and observability to shared infrastructure.

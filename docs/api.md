@@ -56,3 +56,6 @@ Both endpoints validate the shared schemas, return `202` local-mode metadata wit
 
 ## Locale-aware classification
 `POST /api/inbox/classify` accepts `locale` from the client. If omitted in Supabase mode, it resolves the authenticated user profile locale before building the AI provider prompt.
+
+## API Guards
+`/api/inbox/classify` and `/api/inbox/items` enforce JSON payload limits and per-route rate limits. `/api/inbox/retry` is rate-limited and validates `CRON_SECRET` with timing-safe comparison when configured.

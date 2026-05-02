@@ -1,5 +1,6 @@
 import { aiClassificationSchema } from "@life/shared";
 import { z } from "zod";
+import { clientKey, PayloadTooLargeError, payloadTooLargeResponse, rateLimit, rateLimitResponse, readJsonWithLimit } from "../../../../src/lib/http-guards";
 import { persistClassifiedInbox } from "../../../../src/lib/inbox-persistence";
 import { createSupabaseServerClient } from "../../../../src/lib/supabase-client";
 
@@ -9,7 +10,16 @@ const persistRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const parsed = persistRequestSchema.safeParse(await request.json());
+  const limited = rateLimit(clientKey(request, "inbox-items"), 60, 60_000);
+  if (!limited.ok) return rateLimitResponse(limited.retryAfter);
+  let body: unknown;
+  try {
+    body = await readJsonWithLimit(request, 32_000);
+  } catch (cause) {
+    if (cause instanceof PayloadTooLargeError) return payloadTooLargeResponse(cause);
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const parsed = persistRequestSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const supabase = await createSupabaseServerClient();

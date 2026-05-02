@@ -23,3 +23,5 @@
 - Added Supabase auth/onboarding gate, optional OpenAI-compatible AI provider, core web screen routes, actionable suggestions, and Expo tab routes.
 
 - Moved web UI translations to a typed i18n module and made classification locale resolution honor selected/profile language.
+
+- Added preview security headers, API payload/rate guards, timing-safe retry secret checks, richer health readiness, and production runbook/security/privacy docs.

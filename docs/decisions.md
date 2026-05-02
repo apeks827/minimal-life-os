@@ -9,3 +9,6 @@
 
 ## Expanded AI contract with local-first fallback
 We keep deterministic heuristic classification and local persistence as the default demo path, while shaping provider JSON, DB retry metadata, suggestions, advanced settings, and seed flow for production Supabase mode.
+
+## Decision: preview security baseline before shared infrastructure
+We added app-level security headers and process-local API guards now because they close immediate MVP abuse gaps without new services. Production will replace process-local counters with edge or shared-store rate limiting and centralized observability.

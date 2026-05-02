@@ -13,3 +13,6 @@ The retry worker/cron and real vector search are still deployment tasks: the sch
 
 ## Vector extension
 Migration `0003` now enables `vector`; Supabase projects without pgvector support must enable the extension before applying AI memory features.
+
+## Production blockers
+Current rate limiting is process-local and should be replaced with edge/Redis limits before public launch. Export/delete flows, full RLS isolation tests, Sentry/OpenTelemetry wiring, legal/privacy launch copy, and account deletion remain production blockers.
