@@ -1,5 +1,5 @@
 import { heuristicClassify } from "@life/ai";
-import { copy, type AiClassification, type Locale } from "@life/shared";
+import { type AiClassification, type Locale } from "@life/shared";
 import { useMemo, useState } from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -7,8 +7,8 @@ type MobileRecord = AiClassification["items"][number] & { id: string; inboxId: s
 type InboxRecord = { id: string; text: string; classification: AiClassification; createdAt: string };
 
 const labels = {
-  ru: { today: "Сегодня", tasks: "Задачи", goals: "Цели", habits: "Привычки", calendar: "Календарь", balance: "Баланс", inbox: "Журнал", button: "Разобрать локально", empty: "Пока пусто" },
-  en: { today: "Today", tasks: "Tasks", goals: "Goals", habits: "Habits", calendar: "Calendar", balance: "Balance", inbox: "Inbox", button: "Classify locally", empty: "Empty for now" },
+  ru: { today: "Сегодня", tasks: "Задачи", goals: "Цели", habits: "Привычки", calendar: "Календарь", balance: "Баланс", inbox: "Журнал", button: "Разобрать локально", empty: "Пока пусто", placeholder: "Напишите что угодно: задачу, мысль, цель, привычку..." },
+  en: { today: "Today", tasks: "Tasks", goals: "Goals", habits: "Habits", calendar: "Calendar", balance: "Balance", inbox: "Inbox", button: "Classify locally", empty: "Empty for now", placeholder: "Write anything: a task, thought, goal, habit..." },
 } as const;
 
 const areas = ["health", "career", "relationships", "growth"];
@@ -45,7 +45,7 @@ export default function MobileHome() {
       </View>
 
       <View style={{ backgroundColor: "#fffaf0", borderRadius: 28, padding: 18, gap: 12 }}>
-        <TextInput multiline placeholder={copy[locale].inboxPlaceholder} value={text} onChangeText={setText} style={{ minHeight: 110, fontSize: 16 }} />
+        <TextInput multiline placeholder={l.placeholder} value={text} onChangeText={setText} style={{ minHeight: 110, fontSize: 16 }} />
         <TouchableOpacity onPress={submit} style={{ backgroundColor: "#1f261f", borderRadius: 24, padding: 16 }}>
           <Text style={{ color: "white", fontSize: 16 }}>{l.button}</Text>
         </TouchableOpacity>

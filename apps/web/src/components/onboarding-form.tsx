@@ -1,24 +1,12 @@
 "use client";
 
-import { lifeAreaLabels, type LifeArea, type OnboardingAnswer } from "@life/shared";
+import { type LifeArea, type OnboardingAnswer } from "@life/shared";
 import { useEffect, useState } from "react";
+import { areaOptions, dictionaries, onboardingQuestions } from "../lib/i18n";
 import { initialLifeState, updateOnboarding, type LifeState } from "../lib/life-store";
 import { saveOnboarding } from "../lib/profile-repository";
 import { createBrowserLifeStorage } from "../lib/storage";
 
-const areas = Object.entries(lifeAreaLabels).map(([key, label]) => ({ key: key as LifeArea, label: label.ru }));
-const questions = [
-  ["role", "Что сейчас важнее всего?", ["Спокойствие", "Фокус", "Рост"]],
-  ["energy", "Сколько энергии в среднем?", ["Низко", "Средне", "Высоко"]],
-  ["planning", "Как планировать день?", ["Мягко", "Структурно", "Автоматически"]],
-  ["support", "Какой тон поддержки?", ["gentle", "direct", "coach"]],
-  ["risk", "Что нельзя перегружать?", ["Здоровье", "Отношения", "Отдых"]],
-  ["work", "Какой ритм работы?", ["Гибкий", "Спринты", "Ровный"]],
-  ["habits", "Привычки лучше делать...", ["Минимально", "По расписанию", "С напоминанием"]],
-  ["money", "Финансы сейчас...", ["Ок", "Нужен обзор", "Есть стресс"]],
-  ["learning", "Обучение сейчас...", ["Не важно", "Хочу регулярно", "Главный фокус"]],
-  ["review", "Как часто ревью?", ["Ежедневно", "Раз в неделю", "Когда попрошу"]],
-] as const;
 
 const defaultAnswer: OnboardingAnswer = {
   focus: "",
@@ -34,6 +22,10 @@ export function OnboardingForm() {
   const [answer, setAnswer] = useState<OnboardingAnswer>(defaultAnswer);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const locale = state.settings.locale;
+  const l = dictionaries[locale];
+  const areas = areaOptions(locale);
+  const questions = onboardingQuestions[locale];
 
   useEffect(() => {
     const loaded = createBrowserLifeStorage(window.localStorage).load();
@@ -49,7 +41,7 @@ export function OnboardingForm() {
 
   function setChoice(id: string, question: string, selected: string) {
     const choices = [...answer.choices.filter((choice) => choice.id !== id), { id, question, answer: selected }];
-    patch({ choices, preferredTone: selected === "direct" || selected === "coach" || selected === "gentle" ? selected : answer.preferredTone, energyLevel: selected === "Низко" ? "low" : selected === "Высоко" ? "high" : answer.energyLevel });
+    patch({ choices, preferredTone: selected === "direct" || selected === "coach" || selected === "gentle" ? selected : answer.preferredTone, energyLevel: ["Низко", "Low"].includes(selected) ? "low" : ["Высоко", "High"].includes(selected) ? "high" : answer.energyLevel });
   }
 
   function setScore(key: LifeArea, score: number) {
@@ -57,15 +49,15 @@ export function OnboardingForm() {
   }
 
   async function save() {
-    const normalized = { ...answer, focus: answer.focus.trim() || "Собрать систему жизни" };
+    const normalized = { ...answer, focus: answer.focus.trim() || (locale === "ru" ? "Собрать систему жизни" : "Build a life system") };
     const next = updateOnboarding(state, normalized);
     createBrowserLifeStorage(window.localStorage).save(next);
     setState(next);
     try {
       const mode = await saveOnboarding(normalized);
-      setMessage(mode === "supabase" ? "Профиль сохранен в Supabase." : "Профиль сохранен локально.");
+      setMessage(mode === "supabase" ? l.onboardingSavedSupabase : l.onboardingSavedLocal);
     } catch (cause) {
-      setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить профиль на сервере.");
+      setMessage(cause instanceof Error ? cause.message : l.onboardingSaveFailed);
     }
     setSaved(true);
   }
@@ -73,8 +65,8 @@ export function OnboardingForm() {
   return (
     <div className="grid gap-5">
       <label className="grid gap-2 text-sm">
-        Главный фокус на месяц
-        <textarea className="min-h-24 rounded-2xl border border-black/10 bg-[#fffaf0] p-4" value={answer.focus} onChange={(event) => patch({ focus: event.target.value })} placeholder="Например: восстановить режим и закрыть долги по работе" />
+        {l.mainFocus}
+        <textarea className="min-h-24 rounded-2xl border border-black/10 bg-[#fffaf0] p-4" value={answer.focus} onChange={(event) => patch({ focus: event.target.value })} placeholder={l.mainFocusPlaceholder} />
       </label>
 
       <div className="grid gap-3 md:grid-cols-2">
@@ -101,11 +93,11 @@ export function OnboardingForm() {
       </div>
 
       <label className="grid gap-2 text-sm">
-        Дополнительно
-        <textarea className="min-h-20 rounded-2xl border border-black/10 bg-[#fffaf0] p-4" value={answer.openAnswer ?? ""} onChange={(event) => patch({ openAnswer: event.target.value })} placeholder="Любые правила, ограничения или пожелания" />
+        {l.extra}
+        <textarea className="min-h-20 rounded-2xl border border-black/10 bg-[#fffaf0] p-4" value={answer.openAnswer ?? ""} onChange={(event) => patch({ openAnswer: event.target.value })} placeholder={l.extraPlaceholder} />
       </label>
 
-      <button className="rounded-full bg-[var(--ink)] px-6 py-4 text-left text-white" onClick={save}>Сохранить профиль</button>
+      <button className="rounded-full bg-[var(--ink)] px-6 py-4 text-left text-white" onClick={save}>{l.saveProfile}</button>
       {saved && message ? <p className="text-sm text-[var(--moss)]">{message}</p> : null}
     </div>
   );

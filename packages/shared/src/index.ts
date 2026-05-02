@@ -141,22 +141,6 @@ export const userSettingsSchema = z.object({
 });
 export type UserSettings = z.infer<typeof userSettingsSchema>;
 
-export const copy = {
-  ru: {
-    appName: "LifeInbox",
-    inboxPlaceholder: "Напишите что угодно: задачу, мысль, цель, привычку...",
-    today: "План на сегодня",
-    settings: "Настройки",
-    aiFallback: "AI сейчас недоступен, но запись сохранена и разобрана базово.",
-  },
-  en: {
-    appName: "LifeInbox",
-    inboxPlaceholder: "Write anything: a task, thought, goal, habit...",
-    today: "Today Plan",
-    settings: "Settings",
-    aiFallback: "AI is unavailable now, but the item is saved and classified locally.",
-  },
-} as const;
 
 export function detectLocale(text: string, fallback: Locale = "ru"): Locale {
   if (/[а-яё]/i.test(text)) return "ru";
@@ -164,9 +148,6 @@ export function detectLocale(text: string, fallback: Locale = "ru"): Locale {
   return fallback;
 }
 
-export function t(locale: Locale, key: keyof typeof copy.ru): string {
-  return copy[locale][key];
-}
 
 export function normalizeLifeArea(area: AnyLifeArea | undefined): LifeArea | undefined {
   if (!area) return undefined;

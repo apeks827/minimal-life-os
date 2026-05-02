@@ -53,3 +53,6 @@ Both endpoints validate the shared schemas, return `202` local-mode metadata wit
 
 ## Retry endpoint
 `POST /api/inbox/retry` processes pending/failed inbox items when `AI_PROVIDER_API_KEY` or `OPENAI_API_KEY` is configured. Set `CRON_SECRET` and send `Authorization: Bearer <secret>` for scheduled production calls.
+
+## Locale-aware classification
+`POST /api/inbox/classify` accepts `locale` from the client. If omitted in Supabase mode, it resolves the authenticated user profile locale before building the AI provider prompt.

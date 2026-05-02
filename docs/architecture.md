@@ -34,3 +34,6 @@ When Supabase env exists, server pages require an authenticated user and complet
 
 ## Retry processor
 The web API exposes a cron-safe retry endpoint that re-runs pending or failed inbox classifications, updates attempts/error metadata, and backs off future retries.
+
+## Web i18n
+UI translations now live in `apps/web/src/lib/i18n.ts` as a typed dictionary plus helpers for navigation, inbox type labels, onboarding questions, and area labels. Domain-only labels stay in `@life/shared`; component-local copy constants should not be added.

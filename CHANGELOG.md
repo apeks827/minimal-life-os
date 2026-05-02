@@ -21,3 +21,5 @@
 - Expanded LifeInbox AI contract, onboarding quiz, Advanced Settings, suggestion cloud, health status, retry/memory migrations, seed flow, and E2E coverage.
 
 - Added Supabase auth/onboarding gate, optional OpenAI-compatible AI provider, core web screen routes, actionable suggestions, and Expo tab routes.
+
+- Moved web UI translations to a typed i18n module and made classification locale resolution honor selected/profile language.
