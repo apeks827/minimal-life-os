@@ -47,3 +47,6 @@ When Supabase env and a session cookie are present, `/` loads inbox, tasks, goal
 ## `PUT /api/settings` and `PUT /api/onboarding`
 
 Both endpoints validate the shared schemas, return `202` local-mode metadata without Supabase env, and require a Supabase session when configured. Settings update `profiles.locale` plus `settings`; onboarding inserts a versioned answer, updates AI tone, and records balance scores.
+
+## Expanded health response
+`GET /api/health` returns app status plus Supabase and AI provider configuration flags without exposing secrets.

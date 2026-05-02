@@ -14,7 +14,8 @@ describe("inbox repository", () => {
       locale: "ru" as const,
       language: "ru" as const,
       retryable: true,
-      items: [{ type: "task" as const, title: "купить молоко", priority: "medium" as const, confidence: 0.7, needsClarification: false }],
+      suggestions: [],
+      items: [{ type: "task" as const, title: "купить молоко", priority: "medium" as const, effort: "small" as const, confidence: 0.7, needsClarification: false }],
     };
 
     const next = await repository.saveClassification(initialLifeState, "купить молоко", classification);

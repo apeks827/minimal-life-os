@@ -1,4 +1,5 @@
 import type { AiClassification, AiEntity, Locale, OnboardingAnswer, UserSettings } from "@life/shared";
+import { mapInboxItemTypeToEntityType, normalizeLifeArea } from "@life/shared";
 
 export type LifeRecord = AiEntity & {
   id: string;
@@ -22,10 +23,19 @@ export type LifeState = {
 
 export const defaultSettings: UserSettings = {
   locale: "ru",
+  language: "ru",
   aiEnabled: true,
   aiTone: "gentle",
   dailyPlanHour: 8,
+  dailyTaskCount: 5,
   weekStartsOn: "monday",
+  suggestionAggressiveness: "medium",
+  autoIntegrationMode: "ask",
+  focusAreas: [],
+  protectedAreas: ["health", "relationships", "rest"],
+  notifications: { enabled: false, dailyPlan: false },
+  privacy: { storeAiMemory: false, allowAnalytics: false },
+  testMode: false,
 };
 
 export const initialLifeState: LifeState = {
@@ -38,12 +48,19 @@ export const initialLifeState: LifeState = {
 export function appendClassification(state: LifeState, text: string, classification: AiClassification): LifeState {
   const now = new Date().toISOString();
   const inboxId = cryptoSafeId("inbox");
-  const records = classification.items.map((item) => ({
-    ...item,
-    id: cryptoSafeId(item.type),
-    inboxId,
-    createdAt: now,
-  }));
+  const records = classification.items.map((item) => {
+    const entityType = mapInboxItemTypeToEntityType(item.type);
+    const lifeArea = normalizeLifeArea(item.life_area ?? item.lifeArea);
+    return {
+      ...item,
+      type: entityType,
+      lifeArea,
+      life_area: lifeArea,
+      id: cryptoSafeId(entityType),
+      inboxId,
+      createdAt: now,
+    };
+  });
 
   return {
     ...state,

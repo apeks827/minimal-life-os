@@ -25,3 +25,9 @@ The web app now talks to an `InboxRepository` contract. Local MVP mode uses `cre
 ## Auth And Persistence Wiring
 
 `apps/web/src/lib/supabase-client.ts` creates browser/server clients only when Supabase env is present. Auth server actions sign users in/up through Supabase and otherwise explain that local MVP mode is active. The dashboard repository chooses Supabase persistence when env exists, falling back to local storage when it does not.
+
+## AI contract update
+Shared schemas now model the full LifeInbox item contract, 12 life areas, advanced settings, suggestion cloud, and backwards-compatible mapping to existing task/goal/habit/event/memory tables.
+
+## Auth and AI provider gate
+When Supabase env exists, server pages require an authenticated user and completed onboarding before showing the app shell. The classify API can call an OpenAI-compatible provider via `OPENAI_API_KEY` or `AI_PROVIDER_API_KEY`, falling back to heuristic classification without breaking local mode.

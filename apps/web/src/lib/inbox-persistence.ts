@@ -1,4 +1,5 @@
 import type { AiClassification, AiEntity } from "@life/shared";
+import { mapInboxItemTypeToEntityType, normalizeLifeArea } from "@life/shared";
 
 type SupabaseLike = {
   from(table: string): {
@@ -38,13 +39,14 @@ export async function persistClassifiedInbox(supabase: SupabaseLike, input: Pers
 }
 
 async function persistEntity(supabase: SupabaseLike, userId: string, inboxId: string, item: AiEntity) {
-  const table = tableForType(item.type);
+  const entityType = mapInboxItemTypeToEntityType(item.type);
+  const table = tableForType(entityType);
   const values = valuesForEntity(userId, inboxId, item);
   const result = await supabase.from(table).insert(values).select("id").single();
   if (result.error) throw new Error(result.error.message);
 }
 
-function tableForType(type: AiEntity["type"]): string {
+function tableForType(type: ReturnType<typeof mapInboxItemTypeToEntityType>): string {
   switch (type) {
     case "task":
       return "tasks";
@@ -62,11 +64,13 @@ function tableForType(type: AiEntity["type"]): string {
 }
 
 function valuesForEntity(userId: string, inboxId: string, item: AiEntity): Record<string, unknown> {
-  switch (item.type) {
+  const entityType = mapInboxItemTypeToEntityType(item.type);
+  const lifeArea = normalizeLifeArea(item.life_area ?? item.lifeArea);
+  switch (entityType) {
     case "task":
       return { user_id: userId, inbox_item_id: inboxId, title: item.title, priority: item.priority, due_at: item.dueAt ?? null };
     case "goal":
-      return { user_id: userId, inbox_item_id: inboxId, title: item.title, area: item.lifeArea ?? null };
+      return { user_id: userId, inbox_item_id: inboxId, title: item.title, area: lifeArea ?? null };
     case "habit":
       return { user_id: userId, inbox_item_id: inboxId, title: item.title, recurrence: item.recurrence ?? "daily" };
     case "event":

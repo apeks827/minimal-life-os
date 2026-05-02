@@ -30,7 +30,8 @@ describe("persistClassifiedInbox", () => {
         locale: "ru",
         language: "ru",
         retryable: true,
-        items: [{ type: "task", title: "купить молоко", priority: "medium", confidence: 0.7, needsClarification: false }],
+        suggestions: [],
+        items: [{ type: "task", title: "купить молоко", priority: "medium", effort: "small", confidence: 0.7, needsClarification: false }],
       },
     });
 

@@ -17,3 +17,7 @@
 - Added Supabase-backed settings/onboarding saves and installed Playwright browsers in CI before e2e tests.
 
 - Upgraded stable dependencies, moved CI to Node 24, fixed Next 16 e2e flow, and expanded the Expo mobile LifeInbox skeleton with local classification parity.
+
+- Expanded LifeInbox AI contract, onboarding quiz, Advanced Settings, suggestion cloud, health status, retry/memory migrations, seed flow, and E2E coverage.
+
+- Added Supabase auth/onboarding gate, optional OpenAI-compatible AI provider, core web screen routes, actionable suggestions, and Expo tab routes.

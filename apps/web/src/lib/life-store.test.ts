@@ -17,7 +17,8 @@ describe("life store", () => {
       locale: "ru",
       language: "ru",
       retryable: true,
-      items: [{ type: "task", title: "купить молоко", priority: "medium", confidence: 0.7, needsClarification: false }],
+      suggestions: [],
+      items: [{ type: "task", title: "купить молоко", priority: "medium", effort: "small", confidence: 0.7, needsClarification: false }],
     });
 
     expect(state.inbox).toHaveLength(1);
@@ -32,6 +33,8 @@ describe("life store", () => {
       painPoints: [],
       preferredTone: "coach",
       balanceScores: { health: 6 },
+      choices: [],
+      energyLevel: "medium",
     });
 
     expect(withOnboarding.settings.locale).toBe("en");

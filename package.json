@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @life/db db:generate",
     "db:migrate": "pnpm --filter @life/db db:migrate",
-    "db:check": "pnpm --filter @life/db db:check"
+    "db:check": "pnpm --filter @life/db db:check",
+    "seed:owner": "node scripts/seed-owner.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

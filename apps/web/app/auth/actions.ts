@@ -22,8 +22,9 @@ export async function signUpAction(_state: AuthActionState, formData: FormData):
 
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) return { ok: false, message: error.message };
+  if (data.user?.identities?.length === 0) return { ok: false, message: "User already exists. Try signing in." };
   return { ok: true, message: "Check your email to confirm the account, then sign in." };
 }
 
