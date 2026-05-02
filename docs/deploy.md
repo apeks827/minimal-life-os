@@ -23,3 +23,6 @@
 ## Supabase Auth/RLS Setup
 
 Apply both migrations in order. `0002_profiles_rls_and_entity_links.sql` installs the `auth.users` trigger that creates `profiles` and `settings`, adds `inbox_item_id` links to derived tables, and enables own-row RLS policies. After migrations, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for the web app.
+
+
+CI installs Playwright Chromium before `pnpm test:e2e`; keep this step when upgrading Playwright because browsers are not included in the npm package cache.

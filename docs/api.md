@@ -42,3 +42,8 @@ When Supabase env and an authenticated user are present, the endpoint inserts in
 ## Server Dashboard Load
 
 When Supabase env and a session cookie are present, `/` loads inbox, tasks, goals, habits, events, memories, profile locale, and settings server-side through RLS-scoped Supabase queries. Anonymous users stay in local MVP mode.
+
+
+## `PUT /api/settings` and `PUT /api/onboarding`
+
+Both endpoints validate the shared schemas, return `202` local-mode metadata without Supabase env, and require a Supabase session when configured. Settings update `profiles.locale` plus `settings`; onboarding inserts a versioned answer, updates AI tone, and records balance scores.

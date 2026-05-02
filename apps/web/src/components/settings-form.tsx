@@ -3,11 +3,13 @@
 import type { UserSettings } from "@life/shared";
 import { useEffect, useState } from "react";
 import { initialLifeState, updateSettings, type LifeState } from "../lib/life-store";
+import { saveSettings } from "../lib/profile-repository";
 import { createBrowserLifeStorage } from "../lib/storage";
 
 export function SettingsForm() {
   const [state, setState] = useState<LifeState>(initialLifeState);
   const [saved, setSaved] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setState(createBrowserLifeStorage(window.localStorage).load());
@@ -16,10 +18,17 @@ export function SettingsForm() {
   function patch(settings: Partial<UserSettings>) {
     setState((current) => updateSettings(current, settings));
     setSaved(false);
+    setMessage(null);
   }
 
-  function save() {
+  async function save() {
     createBrowserLifeStorage(window.localStorage).save(state);
+    try {
+      const mode = await saveSettings(state.settings);
+      setMessage(mode === "supabase" ? "Настройки сохранены в Supabase." : "Настройки сохранены локально.");
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить настройки на сервере.");
+    }
     setSaved(true);
   }
 
@@ -49,7 +58,7 @@ export function SettingsForm() {
         Включить AI, если доступен ключ провайдера
       </label>
       <button className="rounded-full bg-[var(--ink)] px-6 py-4 text-left text-white" onClick={save}>Сохранить настройки</button>
-      {saved ? <p className="text-sm text-[var(--moss)]">Настройки сохранены локально.</p> : null}
+      {saved && message ? <p className="text-sm text-[var(--moss)]">{message}</p> : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import type { LifeArea, OnboardingAnswer } from "@life/shared";
 import { useEffect, useState } from "react";
 import { initialLifeState, updateOnboarding, type LifeState } from "../lib/life-store";
+import { saveOnboarding } from "../lib/profile-repository";
 import { createBrowserLifeStorage } from "../lib/storage";
 
 const areas: Array<{ key: LifeArea; label: string }> = [
@@ -27,6 +28,7 @@ export function OnboardingForm() {
   const [state, setState] = useState<LifeState>(initialLifeState);
   const [answer, setAnswer] = useState<OnboardingAnswer>(defaultAnswer);
   const [saved, setSaved] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loaded = createBrowserLifeStorage(window.localStorage).load();
@@ -37,16 +39,24 @@ export function OnboardingForm() {
   function patch(next: Partial<OnboardingAnswer>) {
     setAnswer((current) => ({ ...current, ...next }));
     setSaved(false);
+    setMessage(null);
   }
 
   function setScore(key: LifeArea, score: number) {
     patch({ balanceScores: { ...answer.balanceScores, [key]: score } });
   }
 
-  function save() {
-    const next = updateOnboarding(state, { ...answer, focus: answer.focus.trim() || "Собрать систему жизни" });
+  async function save() {
+    const normalized = { ...answer, focus: answer.focus.trim() || "Собрать систему жизни" };
+    const next = updateOnboarding(state, normalized);
     createBrowserLifeStorage(window.localStorage).save(next);
     setState(next);
+    try {
+      const mode = await saveOnboarding(normalized);
+      setMessage(mode === "supabase" ? "Профиль сохранен в Supabase." : "Профиль сохранен локально.");
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Не удалось сохранить профиль на сервере.");
+    }
     setSaved(true);
   }
 
@@ -73,7 +83,7 @@ export function OnboardingForm() {
         ))}
       </div>
       <button className="rounded-full bg-[var(--ink)] px-6 py-4 text-left text-white" onClick={save}>Сохранить локальный профиль</button>
-      {saved ? <p className="text-sm text-[var(--moss)]">Профиль сохранен и тон AI обновлен.</p> : null}
+      {saved && message ? <p className="text-sm text-[var(--moss)]">{message}</p> : null}
     </div>
   );
 }

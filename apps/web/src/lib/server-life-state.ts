@@ -1,4 +1,4 @@
-import type { AiClassification, AiEntity, Locale, UserSettings } from "@life/shared";
+import type { AiClassification, AiEntity, Locale, OnboardingAnswer, UserSettings } from "@life/shared";
 import { defaultSettings, initialLifeState, type InboxRecord, type LifeRecord, type LifeState } from "./life-store";
 
 type SelectResult<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
@@ -17,9 +17,11 @@ type DbEvent = { id: string; inbox_item_id: string | null; title: string; starts
 type DbMemory = { id: string; inbox_item_id: string | null; content: string; tags: string[] | null };
 type DbSettings = Partial<UserSettings>;
 type DbProfile = { locale: Locale | null };
+type DbOnboarding = { answers: OnboardingAnswer; created_at: string };
+type DbBalanceScore = { area_key: keyof OnboardingAnswer["balanceScores"]; score: number; scored_on: string };
 
 export async function loadServerLifeState(supabase: SupabaseReader): Promise<LifeState> {
-  const [inbox, tasks, goals, habits, events, memories, settings, profiles] = await Promise.all([
+  const [inbox, tasks, goals, habits, events, memories, settings, profiles, onboarding, balanceScores] = await Promise.all([
     selectOrdered<DbInbox>(supabase, "inbox_items", "id, raw_text, classification, created_at"),
     selectOrdered<DbTask>(supabase, "tasks", "id, inbox_item_id, title, priority, due_at"),
     selectOrdered<DbGoal>(supabase, "goals", "id, inbox_item_id, title, area, target_date"),
@@ -28,6 +30,8 @@ export async function loadServerLifeState(supabase: SupabaseReader): Promise<Lif
     selectOrdered<DbMemory>(supabase, "memories", "id, inbox_item_id, content, tags"),
     selectOrdered<DbSettings>(supabase, "settings", "aiEnabled:ai_enabled, aiTone:ai_tone, dailyPlanHour:daily_plan_hour, weekStartsOn:week_starts_on"),
     selectOrdered<DbProfile>(supabase, "profiles", "locale"),
+    selectOrdered<DbOnboarding>(supabase, "onboarding_answers", "answers, created_at"),
+    selectOrdered<DbBalanceScore>(supabase, "balance_scores", "area_key, score, scored_on"),
   ]);
 
   const inboxRecords = inbox.map(toInboxRecord);
@@ -45,6 +49,7 @@ export async function loadServerLifeState(supabase: SupabaseReader): Promise<Lif
     inbox: inboxRecords,
     records,
     settings: { ...defaultSettings, ...settings[0], locale: profiles[0]?.locale ?? settings[0]?.locale ?? defaultSettings.locale },
+    onboarding: mergeOnboarding(onboarding[0]?.answers, balanceScores),
   };
 }
 
@@ -89,4 +94,15 @@ function baseRecord(id: string, inboxId: string | null, createdAtByInbox: Map<st
 
 function emptyClassification(text: string): AiClassification {
   return { status: "classified", source: "heuristic", locale: "ru", language: "ru", retryable: false, items: [{ type: "note", title: text.slice(0, 120), priority: "low", confidence: 1, needsClarification: false }] };
+}
+
+function mergeOnboarding(answer: OnboardingAnswer | undefined, scores: DbBalanceScore[]): OnboardingAnswer | null {
+  if (!answer && scores.length === 0) return null;
+  const balanceScores = scores.reduce<OnboardingAnswer["balanceScores"]>((acc, item) => ({ ...acc, [item.area_key]: item.score }), answer?.balanceScores ?? {});
+  return {
+    focus: answer?.focus ?? "",
+    painPoints: answer?.painPoints ?? [],
+    preferredTone: answer?.preferredTone ?? "gentle",
+    balanceScores,
+  };
 }
