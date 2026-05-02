@@ -6,3 +6,6 @@
 - Added shared schemas, AI fallback classifier, Supabase migration, web shell, mobile skeleton, and validation tests.
 
 - Added interactive local-first web dashboard with inbox classification, derived panels, and auth/onboarding/settings placeholders.
+
+- Added Supabase-ready inbox repository contracts plus interactive local onboarding/settings persistence.
+- Added Dependabot automerge workflow for passing dependency PRs.

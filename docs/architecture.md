@@ -15,3 +15,8 @@ The repository is a pnpm + Turborepo monorepo. Domain contracts live in `package
 ## Current MVP Runtime
 
 The web app is local-first while Supabase credentials are optional. `LifeDashboard` stores inbox records and created entities in browser localStorage, using `/api/inbox/classify` for the same classifier contract that production persistence will call. This keeps the core capture-to-plan loop demonstrable before auth and RLS-backed writes are fully connected.
+
+
+## Repository Path To Supabase
+
+The web app now talks to an `InboxRepository` contract. Local MVP mode uses `createLocalInboxRepository` with browser storage. Production wiring can swap to `createSupabaseReadyInboxRepository`, which keeps the classify API contract and sends `{ text, classification }` to a future authenticated `/api/inbox/items` endpoint for transactional creation of `inbox_items` plus derived entities.

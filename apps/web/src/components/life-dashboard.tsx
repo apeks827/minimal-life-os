@@ -2,20 +2,17 @@
 
 import { copy, type Locale } from "@life/shared";
 import { useEffect, useMemo, useState } from "react";
-import { classifyInboxItem } from "../lib/repository";
+import { createLocalInboxRepository } from "../lib/repository";
+import { createBrowserLifeStorage } from "../lib/storage";
 import {
-  appendClassification,
   initialLifeState,
-  parseState,
   recordsByType,
-  serializeState,
   todayPlan,
   updateLocale,
   type LifeRecord,
   type LifeState,
 } from "../lib/life-store";
 
-const storageKey = "lifeinbox.mvp.state";
 const labels = {
   ru: {
     hero: "Соберите жизнь в один спокойный вход.",
@@ -64,12 +61,8 @@ export function LifeDashboard() {
   const l = labels[locale];
 
   useEffect(() => {
-    setState(parseState(window.localStorage.getItem(storageKey)));
+    setState(createBrowserLifeStorage(window.localStorage).load());
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(storageKey, serializeState(state));
-  }, [state]);
 
   const plan = useMemo(() => todayPlan(state.records), [state.records]);
 
@@ -79,8 +72,10 @@ export function LifeDashboard() {
     setIsLoading(true);
     setError(null);
     try {
-      const classification = await classifyInboxItem({ text: trimmed, locale });
-      setState((current) => appendClassification(current, trimmed, classification));
+      const storage = createBrowserLifeStorage(window.localStorage);
+      const repository = createLocalInboxRepository(storage);
+      const classification = await repository.classify({ text: trimmed, locale });
+      setState(await repository.saveClassification(state, trimmed, classification));
       setText("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Classification failed");
@@ -97,7 +92,11 @@ export function LifeDashboard() {
           <a className="rounded-full bg-white/60 px-3 py-2" href="/auth">{l.auth}</a>
           <a className="rounded-full bg-white/60 px-3 py-2" href="/onboarding">{l.onboarding}</a>
           <a className="rounded-full bg-white/60 px-3 py-2" href="/settings">{l.settings}</a>
-          <button className="rounded-full bg-[var(--ink)] px-3 py-2 text-white" onClick={() => setState((current) => updateLocale(current, locale === "ru" ? "en" : "ru"))}>
+          <button className="rounded-full bg-[var(--ink)] px-3 py-2 text-white" onClick={() => setState((current) => {
+              const next = updateLocale(current, locale === "ru" ? "en" : "ru");
+              createBrowserLifeStorage(window.localStorage).save(next);
+              return next;
+            })}>
             {locale.toUpperCase()}
           </button>
         </div>
