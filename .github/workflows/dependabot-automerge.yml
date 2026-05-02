@@ -1,0 +1,119 @@
+name: Dependabot Automerge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  check_suite:
+    types: [completed]
+  status: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  automerge:
+    name: Merge passing Dependabot PRs
+    runs-on: ubuntu-latest
+    if: >-
+      ${{
+        github.event_name == 'pull_request_target' ||
+        github.event_name == 'check_suite' ||
+        github.event_name == 'status'
+      }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+        continue-on-error: true
+
+      - name: Enable automerge for matching Dependabot PRs
+        uses: actions/github-script@v7
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token || github.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const isDependabot = (pr) =>
+              pr.user?.login === "dependabot[bot]" ||
+              pr.head?.user?.login === "dependabot[bot]" ||
+              pr.head?.ref?.startsWith("dependabot/");
+
+            async function listCandidatePulls() {
+              if (context.payload.pull_request) return [context.payload.pull_request];
+
+              const { data } = await github.rest.pulls.list({
+                owner,
+                repo,
+                state: "open",
+                per_page: 100,
+              });
+              return data.filter(isDependabot);
+            }
+
+            async function getCombinedState(sha) {
+              const { data } = await github.rest.repos.getCombinedStatusForRef({
+                owner,
+                repo,
+                ref: sha,
+              });
+              return data.state;
+            }
+
+            async function getCheckConclusion(sha) {
+              const { data } = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: sha,
+                per_page: 100,
+              });
+              const checkRuns = data.check_runs.filter((run) => run.name !== "Merge passing Dependabot PRs");
+              if (checkRuns.length === 0) return "success";
+              if (checkRuns.some((run) => ["failure", "cancelled", "timed_out", "action_required"].includes(run.conclusion))) return "failure";
+              if (checkRuns.some((run) => run.status !== "completed" || run.conclusion !== "success")) return "pending";
+              return "success";
+            }
+
+            async function mergePull(pr) {
+              const details = await github.rest.pulls.get({ owner, repo, pull_number: pr.number });
+              const pull = details.data;
+              if (!isDependabot(pull) || pull.draft) return;
+
+              const sha = pull.head.sha;
+              const statusState = await getCombinedState(sha);
+              const checkConclusion = await getCheckConclusion(sha);
+
+              if (statusState === "failure" || checkConclusion === "failure") {
+                core.info(`Dependabot PR #${pull.number} has failing checks; skipping.`);
+                return;
+              }
+
+              if (statusState !== "success" || checkConclusion !== "success") {
+                core.info(`Dependabot PR #${pull.number} checks are not complete yet; skipping.`);
+                return;
+              }
+
+              await github.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: pull.number,
+                merge_method: "squash",
+              });
+              core.info(`Merged Dependabot PR #${pull.number}.`);
+            }
+
+            for (const pull of await listCandidatePulls()) {
+              await mergePull(pull);
+            }

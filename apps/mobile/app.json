@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "LifeInbox",
+    "slug": "lifeinbox",
+    "scheme": "lifeinbox",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": ["expo-router"],
+    "extra": { "eas": { "projectId": "local-mvp-placeholder" } }
+  }
+}
