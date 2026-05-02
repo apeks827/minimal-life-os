@@ -66,15 +66,15 @@ function valuesForEntity(userId: string, inboxId: string, item: AiEntity): Recor
     case "task":
       return { user_id: userId, inbox_item_id: inboxId, title: item.title, priority: item.priority, due_at: item.dueAt ?? null };
     case "goal":
-      return { user_id: userId, title: item.title, area: item.lifeArea ?? null };
+      return { user_id: userId, inbox_item_id: inboxId, title: item.title, area: item.lifeArea ?? null };
     case "habit":
-      return { user_id: userId, title: item.title, recurrence: item.recurrence ?? "daily" };
+      return { user_id: userId, inbox_item_id: inboxId, title: item.title, recurrence: item.recurrence ?? "daily" };
     case "event":
-      return { user_id: userId, title: item.title, starts_at: item.dueAt ?? null };
+      return { user_id: userId, inbox_item_id: inboxId, title: item.title, starts_at: item.dueAt ?? null };
     case "memory":
-      return { user_id: userId, content: item.summary ?? item.title, tags: [item.type] };
+      return { user_id: userId, inbox_item_id: inboxId, content: item.summary ?? item.title, tags: [item.type] };
     case "note":
-      return { user_id: userId, content: item.summary ?? item.title, tags: ["note"] };
+      return { user_id: userId, inbox_item_id: inboxId, content: item.summary ?? item.title, tags: ["note"] };
   }
 }
 

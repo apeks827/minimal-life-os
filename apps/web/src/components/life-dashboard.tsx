@@ -51,8 +51,8 @@ const typeLabels = {
   memory: { ru: "Память", en: "Memory" },
 } as const;
 
-export function LifeDashboard() {
-  const [state, setState] = useState<LifeState>(initialLifeState);
+export function LifeDashboard({ serverState }: { serverState?: LifeState }) {
+  const [state, setState] = useState<LifeState>(serverState ?? initialLifeState);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,8 +61,12 @@ export function LifeDashboard() {
   const l = labels[locale];
 
   useEffect(() => {
+    if (serverState) {
+      createBrowserLifeStorage(window.localStorage).save(serverState);
+      return;
+    }
     setState(createBrowserLifeStorage(window.localStorage).load());
-  }, []);
+  }, [serverState]);
 
   const plan = useMemo(() => todayPlan(state.records), [state.records]);
 

@@ -37,3 +37,8 @@ Persists a classified inbox item for the authenticated user. The local repositor
 ```
 
 When Supabase env and an authenticated user are present, the endpoint inserts into `inbox_items`, then fans out records into tasks, goals, habits, notes, events, or memories. Without Supabase env it returns `202` local-mode metadata so the browser can continue local persistence.
+
+
+## Server Dashboard Load
+
+When Supabase env and a session cookie are present, `/` loads inbox, tasks, goals, habits, events, memories, profile locale, and settings server-side through RLS-scoped Supabase queries. Anonymous users stay in local MVP mode.

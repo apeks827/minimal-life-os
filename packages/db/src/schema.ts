@@ -51,6 +51,7 @@ export const tasks = pgTable("tasks", {
 export const goals = pgTable("goals", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  inboxItemId: uuid("inbox_item_id").references(() => inboxItems.id),
   title: text("title").notNull(),
   area: text("area"),
   targetDate: date("target_date"),
@@ -59,6 +60,7 @@ export const goals = pgTable("goals", {
 export const habits = pgTable("habits", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  inboxItemId: uuid("inbox_item_id").references(() => inboxItems.id),
   title: text("title").notNull(),
   recurrence: text("recurrence").notNull().default("daily"),
   active: boolean("active").notNull().default(true),
@@ -97,6 +99,7 @@ export const suggestions = pgTable("suggestions", {
 export const memories = pgTable("memories", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  inboxItemId: uuid("inbox_item_id").references(() => inboxItems.id),
   content: text("content").notNull(),
   tags: jsonb("tags").notNull().default([]),
 });
@@ -104,6 +107,7 @@ export const memories = pgTable("memories", {
 export const events = pgTable("events", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  inboxItemId: uuid("inbox_item_id").references(() => inboxItems.id),
   title: text("title").notNull(),
   startsAt: timestamp("starts_at", { withTimezone: true }),
   endsAt: timestamp("ends_at", { withTimezone: true }),

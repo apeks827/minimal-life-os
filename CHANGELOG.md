@@ -11,3 +11,5 @@
 - Added Dependabot automerge workflow for passing dependency PRs.
 
 - Wired Supabase auth actions and `/api/inbox/items` persistence endpoint with local-mode fallback.
+
+- Added Supabase RLS/profile migration, entity inbox links, and authenticated server dashboard loading.
