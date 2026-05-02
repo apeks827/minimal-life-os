@@ -12,15 +12,17 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^55.0.10",
     "@life/shared": "workspace:*",
-    "expo": "^52.0.0",
-    "expo-router": "^4.0.0",
-    "react": "^18.3.1",
-    "react-native": "^0.76.0"
+    "expo": "^55.0.19",
+    "expo-linking": "^55.0.14",
+    "expo-router": "^55.0.13",
+    "react": "^19.2.5",
+    "react-native": "^0.85.2"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.4",
-    "@types/react": "^18.3.12"
+    "@types/react": "^19.2.14",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
   }
 }

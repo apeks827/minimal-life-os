@@ -50,7 +50,7 @@ export const onboardingAnswerSchema = z.object({
   focus: z.string().min(1),
   painPoints: z.array(z.string()).default([]),
   preferredTone: z.enum(["gentle", "direct", "coach"]).default("gentle"),
-  balanceScores: z.record(lifeAreaSchema, z.number().min(1).max(10)).default({}),
+  balanceScores: z.partialRecord(lifeAreaSchema, z.number().min(1).max(10)).default({}),
 });
 export type OnboardingAnswer = z.infer<typeof onboardingAnswerSchema>;
 

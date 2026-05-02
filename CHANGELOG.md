@@ -15,3 +15,5 @@
 - Added Supabase RLS/profile migration, entity inbox links, and authenticated server dashboard loading.
 
 - Added Supabase-backed settings/onboarding saves and installed Playwright browsers in CI before e2e tests.
+
+- Upgraded stable dependencies, moved CI to Node 24, fixed Next 16 e2e flow, and expanded the Expo mobile LifeInbox skeleton with local classification parity.
