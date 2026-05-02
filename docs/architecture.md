@@ -31,3 +31,6 @@ Shared schemas now model the full LifeInbox item contract, 12 life areas, advanc
 
 ## Auth and AI provider gate
 When Supabase env exists, server pages require an authenticated user and completed onboarding before showing the app shell. The classify API can call an OpenAI-compatible provider via `OPENAI_API_KEY` or `AI_PROVIDER_API_KEY`, falling back to heuristic classification without breaking local mode.
+
+## Retry processor
+The web API exposes a cron-safe retry endpoint that re-runs pending or failed inbox classifications, updates attempts/error metadata, and backs off future retries.

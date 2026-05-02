@@ -10,3 +10,6 @@ Supabase seed automation requires owner-provided service-role credentials. Mobil
 
 ## Remaining production work
 The retry worker/cron and real vector search are still deployment tasks: the schema and metadata exist, but background execution depends on Supabase Edge Functions or another scheduler. Mobile tabs are local-first and do not yet share cloud auth sessions.
+
+## Vector extension
+Migration `0003` now enables `vector`; Supabase projects without pgvector support must enable the extension before applying AI memory features.

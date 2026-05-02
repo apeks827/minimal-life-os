@@ -1,3 +1,5 @@
+create extension if not exists vector;
+
 alter table inbox_items add column if not exists attempts integer not null default 0;
 alter table inbox_items add column if not exists last_error text;
 alter table inbox_items add column if not exists next_retry_at timestamptz;

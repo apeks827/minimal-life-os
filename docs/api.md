@@ -50,3 +50,6 @@ Both endpoints validate the shared schemas, return `202` local-mode metadata wit
 
 ## Expanded health response
 `GET /api/health` returns app status plus Supabase and AI provider configuration flags without exposing secrets.
+
+## Retry endpoint
+`POST /api/inbox/retry` processes pending/failed inbox items when `AI_PROVIDER_API_KEY` or `OPENAI_API_KEY` is configured. Set `CRON_SECRET` and send `Authorization: Bearer <secret>` for scheduled production calls.
